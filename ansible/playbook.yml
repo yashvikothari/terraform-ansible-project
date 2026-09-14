@@ -1,0 +1,25 @@
+---
+- name: Configure web server
+  hosts: webservers
+  become: true
+
+  tasks:
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    - name: Create devops user
+      user:
+        name: devops
+        state: present
+        shell: /bin/bash
+        create_home: true
+
+    - name: Ensure nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: true
