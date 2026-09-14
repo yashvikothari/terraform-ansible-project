@@ -1,0 +1,62 @@
+---
+- name: Configure Application Server
+  hosts: application_servers
+  become: true
+
+  tasks:
+
+    - name: Install required packages
+      apt:
+        name:
+          - nginx
+          - curl
+        state: present
+        update_cache: true
+
+    - name: Create application user
+      user:
+        name: appuser
+        state: present
+        shell: /bin/bash
+        create_home: true
+
+    - name: Remove default nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Restart nginx
+
+    - name: Configure nginx application site
+      copy:
+        dest: /etc/nginx/sites-available/application
+        content: |
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  default_type text/plain;
+                  return 200 "Application Server configured using Ansible yashvi\n";
+              }
+          }
+      notify: Restart nginx
+
+    - name: Enable application site
+      file:
+        src: /etc/nginx/sites-available/application
+        dest: /etc/nginx/sites-enabled/application
+        state: link
+      notify: Restart nginx
+
+    - name: Ensure nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
